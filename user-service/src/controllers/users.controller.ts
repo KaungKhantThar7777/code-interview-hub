@@ -32,7 +32,7 @@ export type UserResponse = {
   token?: string;
 };
 
-@Route("api/users")
+@Route("/users")
 @Tags("Users")
 export class UsersController extends Controller {
   /**

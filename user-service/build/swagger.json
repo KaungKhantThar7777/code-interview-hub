@@ -82,7 +82,7 @@
 		"contact": {}
 	},
 	"paths": {
-		"/api/users/register": {
+		"/users/register": {
 			"post": {
 				"operationId": "Register",
 				"responses": {
@@ -115,7 +115,7 @@
 				}
 			}
 		},
-		"/api/users/login": {
+		"/users/login": {
 			"post": {
 				"operationId": "Login",
 				"responses": {
@@ -148,7 +148,7 @@
 				}
 			}
 		},
-		"/api/users/{userId}": {
+		"/users/{userId}": {
 			"get": {
 				"operationId": "GetUser",
 				"responses": {

@@ -47,7 +47,7 @@ export function RegisterRoutes(app: Router) {
         const argsUsersController_register: Record<string, TsoaRoute.ParameterSchema> = {
                 requestBody: {"in":"body","name":"requestBody","required":true,"ref":"RegisterRequest"},
         };
-        app.post('/api/users/register',
+        app.post('/users/register',
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.register)),
 
@@ -77,7 +77,7 @@ export function RegisterRoutes(app: Router) {
         const argsUsersController_login: Record<string, TsoaRoute.ParameterSchema> = {
                 requestBody: {"in":"body","name":"requestBody","required":true,"ref":"LoginRequest"},
         };
-        app.post('/api/users/login',
+        app.post('/users/login',
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.login)),
 
@@ -107,7 +107,7 @@ export function RegisterRoutes(app: Router) {
         const argsUsersController_getUser: Record<string, TsoaRoute.ParameterSchema> = {
                 userId: {"in":"path","name":"userId","required":true,"dataType":"string"},
         };
-        app.get('/api/users/:userId',
+        app.get('/users/:userId',
             ...(fetchMiddlewares<RequestHandler>(UsersController)),
             ...(fetchMiddlewares<RequestHandler>(UsersController.prototype.getUser)),
 
