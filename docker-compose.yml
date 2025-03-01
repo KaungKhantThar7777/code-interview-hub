@@ -10,8 +10,10 @@ services:
       - PORT=3001
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=postgres
+      - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
+      - DB_DATABASE=codeinterviewhub
+      - DB_SCHEMA=user_schema
     volumes:
       - ./user-service:/app
     depends_on:

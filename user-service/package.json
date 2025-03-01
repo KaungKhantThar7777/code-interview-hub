@@ -4,9 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "bun run src/app.ts",
-    "dev": "bun --watch run src/app.ts",
-    "generate": "drizzle-kit generate:pg",
-    "migrate": "bun run src/db/migrate.ts"
+    "dev": "bun --watch run src/app.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
