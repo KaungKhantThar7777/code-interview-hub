@@ -16,6 +16,8 @@ services:
       - DB_SCHEMA=user_schema
     volumes:
       - ./user-service:/app
+      - /app/node_modules
+    command: ["bun", "run", "dev"]
     depends_on:
       - postgres
   postgres:

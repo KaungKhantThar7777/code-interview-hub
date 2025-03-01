@@ -8,8 +8,30 @@ export class UserController {
     try {
       const { email, password, name, role } = req.body;
 
-      console.log({ email, password, name, role });
-      res.status(201).json({ message: "User registered" });
+      const existingUser = await userService.findByEmail(email);
+
+      if (existingUser) {
+        res.status(400).json({ message: "User already exists" });
+        return;
+      }
+
+      const user = await userService.createUser({
+        email,
+        password,
+        name,
+        role,
+      });
+
+      const token = userService.generateToken(user);
+      res.status(201).json({
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
+        token,
+      });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ message: "Internal server error" });
