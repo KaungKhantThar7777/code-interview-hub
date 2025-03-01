@@ -1,7 +1,9 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { userRoutes } from "./routes/users.routes";
+import { RegisterRoutes } from "../build/routes";
+import swaggerUi from "swagger-ui-express";
+import swaggerJson from "../build/swagger.json";
 
 dotenv.config();
 
@@ -14,7 +16,11 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/users", userRoutes);
+// Use tsoa generated routes
+RegisterRoutes(app);
+
+// Serve Swagger UI
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerJson));
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "UP", service: "user-service" });
@@ -22,4 +28,7 @@ app.get("/health", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(
+    `Swagger documentation available at http://localhost:${PORT}/docs`
+  );
 });

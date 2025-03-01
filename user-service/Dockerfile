@@ -2,12 +2,17 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
-COPY package.json .    
-COPY bun.lockb .
+# Copy package files
+COPY package.json bun.lockb ./
 
-RUN bun install
+# Install dependencies
+RUN bun install --frozen-lockfile
 
+# Copy the rest of the application
 COPY . .
+
+# Generate routes and swagger documentation
+RUN bun run build
 
 EXPOSE 3001
 
