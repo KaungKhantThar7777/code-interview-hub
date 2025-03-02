@@ -22,6 +22,11 @@ RegisterRoutes(app);
 // Serve Swagger UI
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerJson));
 
+app.get("/swagger.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerJson);
+});
+
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "UP", service: "user-service" });
 });

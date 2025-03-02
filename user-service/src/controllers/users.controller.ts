@@ -84,18 +84,4 @@ export class UsersController extends Controller {
       token: "temp-token",
     };
   }
-
-  /**
-   * Get user by ID
-   */
-  @Get("{userId}")
-  public async getUser(@Path() userId: string): Promise<UserResponse> {
-    // Implementation will go here
-    return {
-      id: userId,
-      email: "user@example.com",
-      name: "User",
-      role: "user",
-    };
-  }
 }

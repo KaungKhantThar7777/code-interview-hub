@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
@@ -18,6 +20,10 @@ func main() {
 			"status": "ok",
 		})
 	})
+
+	router.GET("/docs.json", SwaggerAggregator)
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/docs.json")))
 
 	userServiceUrl := os.Getenv("USER_SERVICE_URL")
 	if userServiceUrl == "" {
