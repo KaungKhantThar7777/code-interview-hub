@@ -1,11 +1,11 @@
 import { UserService } from "../services/users.service";
 import { Body, Controller, Get, Path, Post, Route, Tags } from "tsoa";
 
+import amqp from "amqplib";
+import { publishUserEvent } from "../messaging";
+
 const userService = new UserService();
 
-/**
- * User registration request
- */
 export type RegisterRequest = {
   email: string;
   password: string;
@@ -13,17 +13,11 @@ export type RegisterRequest = {
   role: string;
 };
 
-/**
- * User login request
- */
 export type LoginRequest = {
   email: string;
   password: string;
 };
 
-/**
- * User response object
- */
 export type UserResponse = {
   id: string;
   email: string;
@@ -35,9 +29,6 @@ export type UserResponse = {
 @Route("api/users")
 @Tags("Users")
 export class UsersController extends Controller {
-  /**
-   * Register a new user
-   */
   @Post("register")
   public async register(
     @Body() requestBody: RegisterRequest
@@ -58,6 +49,7 @@ export class UsersController extends Controller {
       role,
     });
 
+    await publishUserEvent(user, "user.registered");
     const token = userService.generateToken(user);
 
     this.setStatus(201);
@@ -70,12 +62,8 @@ export class UsersController extends Controller {
     };
   }
 
-  /**
-   * Login a user
-   */
   @Post("login")
   public async login(@Body() requestBody: LoginRequest): Promise<UserResponse> {
-    // Implementation will go here
     return {
       id: "temp-id",
       email: requestBody.email,

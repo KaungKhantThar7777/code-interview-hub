@@ -4,6 +4,7 @@ import cors from "cors";
 import { RegisterRoutes } from "../build/routes";
 import swaggerUi from "swagger-ui-express";
 import swaggerJson from "../build/swagger.json";
+import { closeConnection, connectToRabbitMQ } from "./messaging";
 
 dotenv.config();
 
@@ -31,9 +32,16 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "UP", service: "user-service" });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await connectToRabbitMQ();
   console.log(`Server is running on port ${PORT}`);
   console.log(
     `Swagger documentation available at http://localhost:${PORT}/docs`
   );
+
+  process.on("SIGINT", async () => {
+    console.log("Shutting down server...");
+    await closeConnection();
+    process.exit(0);
+  });
 });

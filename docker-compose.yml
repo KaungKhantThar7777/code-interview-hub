@@ -1,4 +1,20 @@
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 1
+
   api-gateway:
     build:
       context: ./api-gateway
@@ -24,12 +40,26 @@ services:
       - DB_PASSWORD=postgres
       - DB_DATABASE=codeinterviewhub
       - DB_SCHEMA=user_schema
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
     volumes:
       - ./user-service:/app
-      - /app/node_modules
+
     command: ["bun", "run", "dev"]
     depends_on:
       - postgres
+  email-service:
+    build:
+      context: ./email-service
+      dockerfile: Dockerfile
+    ports:
+      - 3002:3002
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - ./email-service:/app
+    command: ["bun", "run", "dev"]
+    depends_on:
+      - rabbitmq
   postgres:
     image: postgres:17
     environment:
@@ -44,3 +74,4 @@ services:
 
 volumes:
   postgres-data:
+  rabbitmq-data:
