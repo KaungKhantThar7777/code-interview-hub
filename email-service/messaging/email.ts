@@ -1,24 +1,58 @@
-import sgMail from "@sendgrid/mail";
+import nodemailer from "nodemailer";
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY || "");
-
-export interface EmailData {
+export type EmailData = {
   to: string;
   subject: string;
-  text?: string;
-  html?: string;
+  text: string;
+  html: string;
+};
+
+let testAccount: nodemailer.TestAccount | null = null;
+let transporter: nodemailer.Transporter | null = null;
+
+async function createTestAccount() {
+  if (!testAccount) {
+    testAccount = await nodemailer.createTestAccount();
+
+    transporter = nodemailer.createTransport({
+      host: "smtp.ethereal.email",
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
+  }
+  return testAccount;
 }
 
 export async function sendEmail(emailData: EmailData) {
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || "noreply@interviewhub.com",
-    to: emailData.to,
-    subject: emailData.subject,
-    text: emailData.text || "",
-    html: emailData.html || "",
-  };
+  try {
+    await createTestAccount();
 
-  const response = await sgMail.send(mailOptions);
-  console.log("Email sent: %s", response[0].statusCode);
-  return response;
+    if (!transporter) {
+      throw new Error("Email transporter not initialized");
+    }
+
+    const info = await transporter.sendMail({
+      from: '"Interview Hub" <noreply@interviewhub.com>',
+      to: emailData.to,
+      subject: emailData.subject,
+      text: emailData.text,
+      html: emailData.html,
+    });
+
+    console.log("Message sent: %s", info.messageId);
+    console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+
+    return {
+      success: true,
+      messageId: info.messageId,
+      previewUrl: nodemailer.getTestMessageUrl(info),
+    };
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw error;
+  }
 }

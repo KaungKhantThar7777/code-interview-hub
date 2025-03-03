@@ -58,7 +58,6 @@ services:
       - 3002:3002
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - SENDGRID_API_KEY=secretkey
     volumes:
       - ./email-service:/app
     command: ["bun", "run", "dev"]
