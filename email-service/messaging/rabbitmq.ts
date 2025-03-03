@@ -11,7 +11,7 @@ export async function connectToRabbitMQ() {
 
     const channel = await connection.createChannel();
 
-    const exchange = "user-events";
+    const exchange = "user_events";
 
     await channel.assertExchange(exchange, "topic", { durable: true });
 

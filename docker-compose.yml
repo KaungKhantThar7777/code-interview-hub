@@ -13,7 +13,7 @@ services:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 1
+      retries: 5
 
   api-gateway:
     build:
@@ -46,7 +46,10 @@ services:
 
     command: ["bun", "run", "dev"]
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
   email-service:
     build:
       context: ./email-service
@@ -55,11 +58,13 @@ services:
       - 3002:3002
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - SENDGRID_API_KEY=secretkey
     volumes:
       - ./email-service:/app
     command: ["bun", "run", "dev"]
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
   postgres:
     image: postgres:17
     environment:
@@ -71,6 +76,11 @@ services:
       - 5432:5432
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres-data:

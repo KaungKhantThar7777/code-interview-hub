@@ -1,30 +1,32 @@
-import { getChannel } from "./rabbitmq";
-
+import { RabbitMQClient } from "./rabbitmq";
 import { User } from "../db/schema";
 
-export async function publishUserEvent(user: User, event: string) {
-  try {
-    const channel = getChannel();
+type UserEventPayload = {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  event: string;
+};
 
-    const payload = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      event,
-    };
+export class UserEventPublisher {
+  constructor(private readonly rabbitMQClient: RabbitMQClient) {}
 
-    channel.publish(
-      "user-events",
-      event,
-      Buffer.from(JSON.stringify(payload)),
-      {
+  public async publishUserEvent(user: any, eventType: string): Promise<void> {
+    try {
+      const channel = this.rabbitMQClient.getChannel();
+
+      await channel.assertExchange("user_events", "topic", { durable: true });
+
+      const message = Buffer.from(JSON.stringify(user));
+      channel.publish("user_events", eventType, message, {
         persistent: true,
-      }
-    );
-
-    console.log(`Published user.registered event for user ${user.id}`);
-  } catch (error) {
-    console.error("Failed to publish user event", error);
+        contentType: "application/json",
+      });
+      console.log(`Published ${eventType} event for user ${user.id}`);
+    } catch (error) {
+      console.error("Failed to publish event:", error);
+      throw error;
+    }
   }
 }

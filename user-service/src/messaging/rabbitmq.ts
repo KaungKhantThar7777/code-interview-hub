@@ -1,37 +1,87 @@
 import amqp from "amqplib";
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "";
+type RabbitMQConfig = {
+  url: string;
+  reconnectTimeout: number;
+  maxReconnectAttempts: number;
+};
 
-let connection: amqp.ChannelModel | null = null;
-let channel: amqp.Channel | null = null;
+export class RabbitMQClient {
+  private static instance: RabbitMQClient;
+  static connection: amqp.ChannelModel | null = null;
+  static channel: amqp.Channel | null = null;
 
-export async function connectToRabbitMQ() {
-  try {
-    connection = await amqp.connect(RABBITMQ_URL);
-    channel = await connection.createChannel();
-
-    console.log({ channel });
-    await channel.assertExchange("user-events", "topic", { durable: true });
-
-    return { connection, channel };
-  } catch (error) {
-    console.error("Failed to connect to RabbitMQ", error);
+  public static getInstance(): RabbitMQClient {
+    if (!RabbitMQClient.instance) {
+      RabbitMQClient.instance = new RabbitMQClient();
+    }
+    return RabbitMQClient.instance;
   }
-}
 
-export function getChannel(): amqp.Channel {
-  if (!channel) {
-    throw new Error("RabbitMQ channel not initialized");
+  async connect(): Promise<void> {
+    try {
+      RabbitMQClient.connection = await amqp.connect(
+        process.env.RABBITMQ_URL || ""
+      );
+      RabbitMQClient.channel = await RabbitMQClient.connection.createChannel();
+      console.log({
+        connection: RabbitMQClient.connection,
+        channel: RabbitMQClient.channel,
+      });
+      await RabbitMQClient.channel.assertExchange("user-events", "topic", {
+        durable: true,
+      });
+
+      this.setupConnectionListeners();
+    } catch (error) {
+      console.error("RabbitMQ connection error:", error);
+      throw error;
+    }
   }
-  return channel;
-}
 
-export async function closeConnection() {
-  try {
-    if (channel) await channel.close();
-    if (connection) await connection.close();
-    console.log("Closed RabbitMQ connection");
-  } catch (error) {
-    console.error("Error closing RabbitMQ connection:", error);
+  private setupConnectionListeners(): void {
+    if (!RabbitMQClient.connection) return;
+
+    RabbitMQClient.connection.on("error", async (error) => {
+      console.error("RabbitMQ connection error:", error);
+      await this.handleConnectionError(error);
+    });
+
+    RabbitMQClient.connection.on("close", async () => {
+      console.log("RabbitMQ connection closed");
+      await this.handleConnectionError(new Error("Connection closed"));
+    });
+  }
+
+  private async handleConnectionError(error: unknown): Promise<void> {
+    console.error("RabbitMQ connection error:", error);
+  }
+
+  getChannel(): amqp.Channel {
+    if (!RabbitMQClient.channel) {
+      console.log(RabbitMQClient.channel, "----");
+      throw new Error(
+        "RabbitMQ channel not available. Ensure client is connected."
+      );
+    }
+    return RabbitMQClient.channel;
+  }
+
+  async close(): Promise<void> {
+    try {
+      if (RabbitMQClient.channel) {
+        await RabbitMQClient.channel.close();
+        RabbitMQClient.channel = null;
+      }
+      if (RabbitMQClient.connection) {
+        await RabbitMQClient.connection.close();
+        RabbitMQClient.connection = null;
+      }
+
+      console.log("Closed RabbitMQ connection");
+    } catch (error) {
+      console.error("Error closing RabbitMQ connection:", error);
+      throw error;
+    }
   }
 }
