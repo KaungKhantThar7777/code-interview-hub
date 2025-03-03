@@ -1,30 +1,21 @@
+import { Body, Controller, Inject, Post, Route, Tags } from "tsoa";
 import { UserService } from "../services/users.service";
-import { Body, Controller, Get, Path, Post, Route, Tags } from "tsoa";
+import { RabbitMQClient } from "../messaging/rabbitmq";
+import { UserEventPublisher } from "../messaging/publishers";
 
-const userService = new UserService();
-
-/**
- * User registration request
- */
-export type RegisterRequest = {
+type RegisterRequest = {
   email: string;
   password: string;
   name: string;
   role: string;
 };
 
-/**
- * User login request
- */
-export type LoginRequest = {
+type LoginRequest = {
   email: string;
   password: string;
 };
 
-/**
- * User response object
- */
-export type UserResponse = {
+type UserResponse = {
   id: string;
   email: string;
   name: string;
@@ -35,30 +26,44 @@ export type UserResponse = {
 @Route("api/users")
 @Tags("Users")
 export class UsersController extends Controller {
-  /**
-   * Register a new user
-   */
+  private userService: UserService;
+  private userEventPublisher: UserEventPublisher;
+
+  constructor() {
+    super();
+    this.userService = new UserService();
+    this.userEventPublisher = new UserEventPublisher(
+      RabbitMQClient.getInstance()
+    );
+  }
+
   @Post("register")
   public async register(
     @Body() requestBody: RegisterRequest
   ): Promise<UserResponse> {
     const { email, password, name, role } = requestBody;
-
-    const existingUser = await userService.findByEmail(email);
+    const existingUser = await this.userService.findByEmail(email);
 
     if (existingUser) {
       this.setStatus(400);
       throw new Error("User already exists");
     }
 
-    const user = await userService.createUser({
+    const user = await this.userService.createUser({
       email,
       password,
       name,
       role,
     });
 
-    const token = userService.generateToken(user);
+    try {
+      await this.userEventPublisher.publishUserEvent(user, "user.registered");
+    } catch (error) {
+      console.error("Failed to publish user registration event:", error);
+      // Continue with the registration process even if event publishing fails
+    }
+
+    const token = this.userService.generateToken(user);
 
     this.setStatus(201);
     return {
@@ -70,12 +75,8 @@ export class UsersController extends Controller {
     };
   }
 
-  /**
-   * Login a user
-   */
   @Post("login")
   public async login(@Body() requestBody: LoginRequest): Promise<UserResponse> {
-    // Implementation will go here
     return {
       id: "temp-id",
       email: requestBody.email,
